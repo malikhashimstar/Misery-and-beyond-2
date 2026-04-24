@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limerent Misery — Hashmatullah Reyaz Malik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1410;
+    --parchment: #f5f0e8;
+    --gold: #c9a84c;
+    --rust: #8b3a2a;
+    --ash: #9e9589;
+    --deep: #0d0b08;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--deep);
+    color: var(--parchment);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, opacity 0.3s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.25s ease, width 0.3s, height 0.3s, opacity 0.3s;
+  }
+
+  /* CANVAS BACKGROUND */
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* GRAIN OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.5;
+  }
+
+  /* HERO SECTION */
+  #hero {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    overflow: hidden;
+  }
+
+  .hero-ornament {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.3s forwards;
+    text-transform: uppercase;
+  }
+
+  .hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3rem, 10vw, 8rem);
+    font-weight: 600;
+    line-height: 0.9;
+    color: var(--parchment);
+    margin: 1.5rem 0 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 0.5s forwards;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-title span {
+    display: block;
+    color: var(--gold);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.55em;
+    letter-spacing: 0.1em;
+    margin-top: 0.3em;
+  }
+
+  .hero-author {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ash);
+    letter-spacing: 0.15em;
+    margin-top: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 0.9s forwards;
+  }
+
+  .hero-divider {
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    margin: 2.5rem auto;
+    opacity: 0;
+    animation: fadeIn 1.5s ease 1.2s forwards;
+  }
+
+  .hero-epigraph {
+    max-width: 520px;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: rgba(245,240,232,0.6);
+    line-height: 1.9;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 1.5s forwards;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 1.5s ease 2.5s forwards;
+    color: var(--ash);
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .scroll-arrow {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  /* READING SECTION */
+  #reading {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 6rem 2rem 10rem;
+  }
+
+  /* QUOTE PULL */
+  .pull-quote {
+    position: relative;
+    margin: 4rem -2rem;
+    padding: 2.5rem 3rem;
+    border-left: 2px solid var(--gold);
+    background: linear-gradient(to right, rgba(201,168,76,0.05), transparent);
+    font-family: 'IM Fell English', serif;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-style: italic;
+    line-height: 1.7;
+    color: var(--parchment);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .pull-quote.visible { opacity: 1; transform: translateX(0); }
+  .pull-quote::before {
+    content: '\201C';
+    position: absolute;
+    top: -0.5rem; left: 1rem;
+    font-size: 5rem;
+    color: var(--gold);
+    opacity: 0.3;
+    line-height: 1;
+    font-family: Georgia, serif;
+  }
+
+  /* PARAGRAPH BLOCKS */
+  .prose-block {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .prose-block.visible { opacity: 1; transform: translateY(0); }
+
+  .prose-block p {
+    font-size: clamp(1rem, 2.2vw, 1.18rem);
+    line-height: 1.95;
+    color: rgba(245,240,232,0.85);
+    margin-bottom: 1.6em;
+  }
+
+  .prose-block p.poetic {
+    text-align: center;
+    font-style: italic;
+    color: rgba(245,240,232,0.6);
+    font-size: 1rem;
+    line-height: 2.2;
+    margin: 2.5em 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* SECTION HEADERS */
+  .section-marker {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 5rem 0 2rem;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .section-marker.visible { opacity: 1; transform: translateY(0); }
+  .section-marker::before, .section-marker::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(201,168,76,0.4), transparent);
+  }
+  .section-marker span {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* HIGHLIGHTED WORDS */
+  .hl { color: var(--gold); font-style: italic; }
+  .hl-rust { color: #d4826a; }
+
+  /* INTERACTIVE REFLECTION BOX */
+  #reflection-box {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 8rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  #reflection-box.visible { opacity: 1; transform: translateY(0); }
+
+  .reflection-inner {
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 3rem;
+    background: rgba(201,168,76,0.03);
+    position: relative;
+  }
+  .reflection-inner::before, .reflection-inner::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--gold);
+    border-style: solid;
+    opacity: 0.5;
+  }
+  .reflection-inner::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+  .reflection-inner::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+  .reflection-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .reflection-prompt {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.2rem;
+    color: rgba(245,240,232,0.75);
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+  }
+
+  #thought-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    color: var(--parchment);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    padding: 0.8rem 0;
+    resize: none;
+    outline: none;
+    min-height: 80px;
+    caret-color: var(--gold);
+  }
+  #thought-input::placeholder { color: rgba(245,240,232,0.2); font-style: italic; }
+  #thought-input:focus { border-bottom-color: var(--gold); }
+
+  .reflection-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.2rem;
+  }
+
+  .char-count { font-size: 0.75rem; color: var(--ash); font-family: 'Cinzel', serif; }
+
+  .save-thought-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    background: none;
+    border: 1px solid rgba(201,168,76,0.35);
+    padding: 0.6rem 1.4rem;
+    cursor: none;
+    text-transform: uppercase;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .save-thought-btn:hover { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+
+  #saved-thoughts {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .saved-thought {
+    padding: 1rem 1.2rem;
+    border-left: 1px solid rgba(201,168,76,0.25);
+    font-style: italic;
+    color: rgba(245,240,232,0.6);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  /* FLOATING QUOTES SIDEBAR */
+  #floating-quotes {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  #floating-quotes.show { opacity: 1; }
+
+  .fq-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.3);
+    cursor: none;
+    transition: background 0.3s, transform 0.3s;
+    position: relative;
+  }
+  .fq-dot:hover { background: var(--gold); transform: scale(1.5); }
+  .fq-dot.active { background: var(--gold); }
+  .fq-tooltip {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(13,11,8,0.95);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 0.5rem 0.8rem;
+    font-style: italic;
+    font-size: 0.75rem;
+    color: var(--ash);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    max-width: 200px;
+    white-space: normal;
+    text-align: right;
+  }
+  .fq-dot:hover .fq-tooltip { opacity: 1; }
+
+  /* FINAL CLOSE */
+  #closing {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 6rem 2rem 10rem;
+  }
+
+  .closing-line {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    color: rgba(245,240,232,0.5);
+    line-height: 2.2;
+    max-width: 560px;
+    margin: 0 auto 3rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .closing-line.visible { opacity: 1; transform: translateY(0); }
+
+  .end-mark {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .end-mark.visible { opacity: 0.6; }
+
+  /* PROGRESS BAR */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--rust), var(--gold));
+    z-index: 100;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  }
+
+  /* PAGE TURN SOUND VISUAL */
+  .page-flicker {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(201,168,76,0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 0.8; transform: scaleY(1.2); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .pull-quote { margin: 3rem -0.5rem; padding: 1.8rem 1.5rem; }
+    #floating-quotes { display: none; }
+    .reflection-inner { padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<canvas id="bg-canvas"></canvas>
+<div id="progress"></div>
+<div class="page-flicker" id="page-flicker"></div>
+
+<!-- FLOATING NAV DOTS -->
+<div id="floating-quotes">
+  <div class="fq-dot active" data-target="hero">
+    <div class="fq-tooltip">Beginning</div>
+  </div>
+  <div class="fq-dot" data-target="s1">
+    <div class="fq-tooltip">On suffering</div>
+  </div>
+  <div class="fq-dot" data-target="s2">
+    <div class="fq-tooltip">A good man</div>
+  </div>
+  <div class="fq-dot" data-target="s3">
+    <div class="fq-tooltip">On love</div>
+  </div>
+  <div class="fq-dot" data-target="s4">
+    <div class="fq-tooltip">On belonging</div>
+  </div>
+  <div class="fq-dot" data-target="reflection">
+    <div class="fq-tooltip">Your reflection</div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-ornament">Introduction</div>
+  <h1 class="hero-title">
+    Limerent<span>Misery</span>
+  </h1>
+  <div class="hero-author">Hashmatullah Reyaz Malik</div>
+  <div class="hero-divider"></div>
+  <p class="hero-epigraph">
+    "We do not look away because we do not care.<br>
+    We look away because we are afraid<br>
+    it could be us."
+  </p>
+  <div class="scroll-hint">
+    <span>Read</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- MAIN TEXT -->
+<main id="reading">
+
+  <!-- Section 1 -->
+  <div id="s1"></div>
+  <div class="section-marker"><span>I. The Pattern</span></div>
+
+  <div class="prose-block">
+    <p>Why do you think we suffer?</p>
+    <p>Look around you—there are people. Just think about it. There are people you see who are always suffering, and you keep hoping that their suffering will end. You might even paint a picture in your mind that this will pass soon—but for them, it never does.</p>
+    <p>Life keeps giving them shocks, like <span class="hl">earthquakes striking at intervals</span>. For a moment, there is happiness, and then suddenly, everything falls quiet again.</p>
+  </div>
+
+  <div class="pull-quote">
+    You may feel that their life will eventually turn out well, because you are not seeing what they are truly going through. Because for them, it has never been easy—it has always been hard.
+  </div>
+
+  <div class="prose-block">
+    <p>I knew a person, and I thought the same—that this was only for a brief moment, that he would suffer for a while, and eventually the universe would reward him with something he had never even imagined.</p>
+    <p>I always believed in that idea—that life has its ups and downs, and that, in the end, you will find the stability you have always wanted.</p>
+    <p>At least, that is what I thought.</p>
+    <p>But over time, something began to feel uncertain.</p>
+    <p class="poetic">Not loudly, not all at once—<br>but slowly, in ways that are difficult to explain.</p>
+    <p>You begin to notice patterns you once ignored. The same people, the same kind of suffering, repeating itself without any clear reason.</p>
+    <p>And you start to wonder—<br>is life really balanced the way we believe it to be?</p>
+    <p>Because if it were, then why do some people seem to carry more than their share, while others move through life untouched by the same weight?</p>
+    <p>Why does relief come easily to some, while for others, it remains distant—almost theoretical?</p>
+  </div>
+
+  <div class="pull-quote">
+    It is not that suffering exists—that much is obvious. It is that it does not seem to be distributed equally.
+  </div>
+
+  <div class="prose-block">
+    <p>And once you begin to see that, the idea of <span class="hl">"everything will eventually be okay"</span> no longer feels like truth.</p>
+    <p class="poetic">It starts to feel like something we tell ourselves—<br>not because it is certain,<br>but because we <em>need</em> it to be.</p>
+  </div>
+
+  <!-- Section 2 -->
+  <div id="s2"></div>
+  <div class="section-marker"><span>II. A Good Man</span></div>
+
+  <div class="prose-block">
+    <p>And then, this person I used to know died.</p>
+    <p>Just a few days before his death, I met him. We spoke about life. I asked him how things were going, and in a weary voice, he said only a few words—<span class="hl-rust">nothing is going well.</span></p>
+    <p>I hesitated, but I still asked him about his life—how it had been, what he had been going through. And I came to know many things about his life.</p>
+    <p>But even then, the only thought in my mind was that this would end well. That he would not suffer forever. That he would eventually find peace. That he would find stability.</p>
+    <p>And that belief kept me at ease—even after knowing that his life was not going well, even after knowing that he was suffering.</p>
+    <p>Because somewhere in my mind, I held on to the idea that everything, in the end, becomes okay. That whatever he was going through was only temporary.</p>
+    <p>And so, I chose not to worry too much.</p>
+    <p>And then, the worst happened.</p>
+  </div>
+
+  <div class="pull-quote">
+    My belief lost its meaning. No matter how I think about him now, no matter what I imagine for him—it changes nothing. Because he is no longer there to see any of it.
+  </div>
+
+  <div class="prose-block">
+    <p>His life has dissolved into what cannot be returned.</p>
+    <p>I will not go into the details of who he was, but I must say this—<span class="hl">he was a good man.</span></p>
+    <p>And to me, he deserved change. He deserved to be happy. He deserved peace.</p>
+    <p>I do not know what the criteria are for a peaceful life, but if goodness is one of them, then he was surely eligible.</p>
+    <p>But it did not happen that way.</p>
+    <p>And perhaps, we say—we do not know what Allah has written for us. This is not a complaint against God. It is something else.</p>
+    <p>It is the quiet realization that maybe we do not understand life the way we think we do.</p>
+    <p class="poetic">We live as if life will explain itself to us.<br>As if it will eventually justify what it takes away.<br><br>And so, we take it lightly.<br>We assume there is time.<br>We assume there is balance.</p>
+    <p>But perhaps… life is not as simple, or as forgiving, as we make it out to be.</p>
+  </div>
+
+  <div class="prose-block">
+    <p>I am not denying that there is balance in life. For some people, life does seem balanced—they go through ups and downs, and eventually, they find a kind of stability.</p>
+    <p>But you know what I call them? I call them <span class="hl">lucky.</span></p>
+    <p>Because even after all the disruption, their lives still move toward something meaningful—something worth holding on to.</p>
+    <p>And at the same time, we cannot deny another reality—that there are people who are not as lucky.</p>
+    <p>In my own understanding, we can never truly predict what life has prepared for us. You may be working hard, doing everything right, expecting a stable or even a comfortable life—</p>
+    <p>and still, things change.</p>
+    <p class="poetic">Sometimes they turn so suddenly, so violently,<br>that nothing you imagined remains at the end.</p>
+  </div>
+
+  <!-- Section 3 -->
+  <div id="s3"></div>
+  <div class="section-marker"><span>III. The Absence of Love</span></div>
+
+  <div class="prose-block">
+    <p>And there is something else that cannot be ignored.</p>
+    <p>Love.</p>
+    <p>Because misery is not only shaped by what happens to us—it is also shaped by what is missing. And one of the deepest absences a person can feel is <span class="hl">the absence of being loved.</span></p>
+    <p>To be unseen, unwanted, or left out of meaningful human connection—this becomes a quiet form of suffering.</p>
+    <p>You may endure hardship, uncertainty, even loss—but when you feel loved, something within you remains intact.</p>
+    <p>You do not feel entirely alone.</p>
+    <p>You do not feel completely out of place.</p>
+    <p>There is still a sense that you matter to someone.</p>
+    <p class="poetic">And perhaps that is what every human being is searching for—<br>not perfection,<br>not even happiness,<br>but to feel <em>wanted.</em></p>
+    <p>And when that is missing, even a stable life can begin to feel empty.</p>
+  </div>
+
+  <div class="pull-quote">
+    We live in a world where love, in many ways, has lost its meaning. It is no longer something that is simply felt—it is something that is judged, filtered, and often reduced to appearances.
+  </div>
+
+  <div class="prose-block">
+    <p>People decide whom to give their attention to based on how you look, how you present yourself, how you fit into what is considered acceptable.</p>
+    <p>This is not limited to love between two people—it extends to almost every human interaction.</p>
+    <p>If you look good, if you carry yourself well, if you meet certain expectations, people stay. If you do not, they begin to drift away.</p>
+    <p>We have moved past what nature intended, and created a world where connection is no longer rooted in understanding, but in <span class="hl-rust">selection.</span></p>
+    <p>And in such a world, those who do not meet these unspoken conditions are left unseen—not because they do not feel, but because they are not chosen.</p>
+    <p>And that, too, becomes a form of misery.</p>
+  </div>
+
+  <!-- Section 4 -->
+  <div id="s4"></div>
+  <div class="section-marker"><span>IV. To Not Turn Away</span></div>
+
+  <div class="prose-block">
+    <p>And there is another absence that deepens it—the absence of belonging. The absence of being seen. The absence of being able to show the world what you are capable of, and having no one who truly notices.</p>
+    <p>A life begins to lose its meaning not only because of suffering, but because it lacks what is needed to sustain it. It needs a seed of love—something small, but enough to plant hope.</p>
+    <p>Without that, even existence begins to feel empty.</p>
+    <p>I am reminded of Frankenstein. If such a being were real, what would be his greatest misery? Not that he is called a monster. Not that he cannot escape his condition. But that <span class="hl">he has no companion—and may never have one.</span></p>
+    <p>Because when a being has no one to share its existence with—no one who understands, no one who stays—even life itself begins to feel like a burden.</p>
+  </div>
+
+  <div class="pull-quote">
+    How is it that a person, whose most basic instinct is to survive, can lose the will to live when someone they love is gone? How is it that the absence of one person can make existence itself feel unbearable?
+  </div>
+
+  <div class="prose-block">
+    <p>Perhaps survival is not only of the body, but of something deeper.</p>
+    <p>And when that breaks, the body alone is not always enough to keep a person here.</p>
+    <p class="poetic">Because man is built to survive—<br>but not alone.</p>
+    <p>And perhaps the problem is not that we do not see suffering, but that we do not <span class="hl">stay with it</span> long enough to understand it.</p>
+    <p>We look, we acknowledge, and then we move on. Because it is easier that way.</p>
+    <p class="poetic">But what if, for a moment, we did not look away?<br><br>What if we allowed ourselves to feel what they feel—<br>not from a distance,<br>but from within?</p>
+    <p>Because the truth is—it could be us.</p>
+    <p>And if that is so, then the least we owe to those who live this reality…</p>
+    <p class="poetic">is to not turn away from it.</p>
+  </div>
+
+</main>
+
+<!-- REFLECTION BOX -->
+<div id="reflection-box">
+  <div class="reflection-inner">
+    <div class="reflection-label">Your Reflection</div>
+    <p class="reflection-prompt">
+      Is there someone in your life you haven't truly seen?<br>
+      Leave your thoughts here—this page will hold them.
+    </p>
+    <textarea id="thought-input" placeholder="Write whatever comes to mind…" maxlength="500"></textarea>
+    <div class="reflection-footer">
+      <span class="char-count" id="char-count">0 / 500</span>
+      <button class="save-thought-btn" id="save-btn">Preserve this thought</button>
+    </div>
+    <div id="saved-thoughts"></div>
+  </div>
+</div>
+
+<!-- CLOSING -->
+<section id="closing">
+  <p class="closing-line">
+    "The least we owe to those who live this reality<br>is to not turn away from it."
+  </p>
+  <div class="end-mark" id="end-mark">— End of Introduction —</div>
+</section>
+
+<script>
+  // CURSOR
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+  document.querySelectorAll('a, button, .fq-dot, textarea').forEach(el => {
+    el.addEventListener('mouseenter', () => { ring.style.width = '50px'; ring.style.height = '50px'; });
+    el.addEventListener('mouseleave', () => { ring.style.width = '32px'; ring.style.height = '32px'; });
+  });
+
+  // CANVAS BACKGROUND — drifting particles
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: Math.random() * 1920,
+      y: Math.random() * 1080,
+      r: Math.random() * 1.5 + 0.3,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: (Math.random() - 0.5) * 0.12,
+      a: Math.random() * 0.4 + 0.1
+    });
+  }
+
+  function drawCanvas() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,168,76,${p.a})`;
+      ctx.fill();
+    });
+    // subtle horizontal lines
+    for (let i = 0; i < 3; i++) {
+      const y = (Date.now() * 0.00003 + i * 0.33) % 1;
+      ctx.beginPath();
+      ctx.moveTo(0, y * H);
+      ctx.lineTo(W, y * H);
+      ctx.strokeStyle = 'rgba(201,168,76,0.03)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    requestAnimationFrame(drawCanvas);
+  }
+  drawCanvas();
+
+  // SCROLL PROGRESS
+  const progressBar = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const total = document.body.scrollHeight - window.innerHeight;
+    const pct = (window.scrollY / total) * 100;
+    progressBar.style.width = pct + '%';
+  });
+
+  // INTERSECTION OBSERVER for animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.prose-block, .pull-quote, .section-marker, .closing-line, #reflection-box, #end-mark').forEach(el => observer.observe(el));
+
+  // FLOATING NAV DOTS
+  const fqDots = document.querySelectorAll('.fq-dot');
+  const sections = ['hero','s1','s2','s3','s4','reflection-box'];
+  const floatNav = document.getElementById('floating-quotes');
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 200) floatNav.classList.add('show');
+    else floatNav.classList.remove('show');
+
+    let current = 0;
+    sections.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 200) current = i;
+    });
+    fqDots.forEach((d, i) => d.classList.toggle('active', i === current));
+  });
+
+  fqDots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(sections[i]);
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // REFLECTION BOX
+  const input = document.getElementById('thought-input');
+  const charCount = document.getElementById('char-count');
+  const saveBtn = document.getElementById('save-btn');
+  const savedDiv = document.getElementById('saved-thoughts');
+
+  input.addEventListener('input', () => {
+    charCount.textContent = `${input.value.length} / 500`;
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const text = input.value.trim();
+    if (!text) return;
+    const el = document.createElement('div');
+    el.className = 'saved-thought';
+    el.textContent = '\u201C' + text + '\u201D';
+    savedDiv.appendChild(el);
+    input.value = '';
+    charCount.textContent = '0 / 500';
+    // flicker effect
+    const flicker = document.getElementById('page-flicker');
+    flicker.style.opacity = '1';
+    setTimeout(() => flicker.style.opacity = '0', 400);
+  });
+
+  // KEYBOARD shortcut: Enter to save
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) saveBtn.click();
+  });
+</script>
+</body>
+</html>
